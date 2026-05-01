@@ -1,571 +1,215 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>DE Quiz · Study Group</title>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DE Quiz</title>
+
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0c0c0e;--surface:#141416;--surface2:#1c1c1f;
-  --border:#2a2a2f;--border2:#333338;
-  --text:#e8e8ec;--muted:#666672;--faint:#3a3a42;
-  --accent:#e8e8ec;--gold:#d4a843;--gold2:#f0c060;
-  --green:#3d9970;--red:#c0392b;
-  --mono:'DM Mono',monospace;--serif:'Instrument Serif',serif;--sans:'Geist',sans-serif;
+body{
+  background:#0c0c0e;
+  color:#fff;
+  font-family:sans-serif;
+  text-align:center;
+  padding:20px;
 }
-html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0 20px 80px;position:relative;overflow-x:hidden}
-
-/* grain overlay */
-body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.4}
-
-.wrap{position:relative;z-index:1;width:100%;max-width:580px;padding-top:60px}
-
-/* ── SCREENS ── */
-.screen{display:none;animation:fadeUp .35s ease both}
-.screen.active{display:block}
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-
-/* ── ENTRY ── */
-.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin-bottom:24px;display:flex;align-items:center;gap:10px}
-.eyebrow::before{content:'';display:block;width:24px;height:1px;background:var(--faint)}
-.hero{font-family:var(--serif);font-size:clamp(42px,8vw,68px);line-height:1.0;letter-spacing:-.01em;margin-bottom:8px}
-.hero em{font-style:italic;color:var(--gold)}
-.sub{font-size:13px;color:var(--muted);margin-bottom:48px;line-height:1.6}
-
-.form-row{margin-bottom:20px}
-.form-label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:8px}
-input[type=text]{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--sans);font-size:15px;padding:13px 16px;border-radius:8px;outline:none;transition:border .2s;caret-color:var(--gold)}
-input[type=text]:focus{border-color:var(--border2)}
-input[type=text]::placeholder{color:var(--faint)}
-
-.topic-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:40px}
-.chip{font-family:var(--mono);font-size:10px;padding:5px 10px;border:1px solid var(--border);border-radius:3px;color:var(--muted);letter-spacing:.06em}
-
-.start-btn{width:100%;background:var(--gold);color:#0c0c0e;font-family:var(--sans);font-size:14px;font-weight:600;border:none;border-radius:8px;padding:16px;cursor:pointer;letter-spacing:.01em;transition:background .2s,transform .1s}
-.start-btn:hover{background:var(--gold2);transform:translateY(-1px)}
-.start-btn:disabled{background:var(--faint);color:var(--muted);cursor:not-allowed;transform:none}
-
-.lb-link{display:block;text-align:center;margin-top:12px;font-family:var(--mono);font-size:11px;color:var(--muted);cursor:pointer;letter-spacing:.08em;transition:color .2s}
-.lb-link:hover{color:var(--text)}
-
-/* ── LOADING ── */
-.loading-wrap{text-align:center;padding:80px 0}
-.spinner{width:32px;height:32px;border:2px solid var(--faint);border-top-color:var(--gold);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 20px}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-text{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.1em}
-
-/* ── QUIZ ── */
-.quiz-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.q-counter{font-family:var(--mono);font-size:11px;color:var(--muted)}
-.timer-wrap{display:flex;align-items:center;gap:6px}
-.timer{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--text);transition:color .3s;min-width:36px;text-align:right}
-.timer.warning{color:#e67e22}
-.timer.danger{color:var(--red);animation:pulse .5s ease infinite alternate}
-@keyframes pulse{to{opacity:.5}}
-.timer-icon{font-size:12px;color:var(--muted)}
-
-.prog-track{width:100%;height:2px;background:var(--faint);border-radius:1px;margin-bottom:36px;overflow:hidden}
-.prog-fill{height:100%;background:var(--gold);border-radius:1px;transition:width .5s ease}
-
-.q-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:16px}
-.q-topic-tag{font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.15em;margin-bottom:14px}
-.q-text{font-size:16px;font-weight:400;line-height:1.6;margin-bottom:14px;color:var(--text)}
-.q-math{font-family:var(--mono);font-size:14px;color:var(--gold);background:var(--surface2);border:1px solid var(--border);padding:12px 16px;border-radius:6px;line-height:1.8;white-space:pre-wrap;word-break:break-word}
-
-.options{display:grid;gap:8px;margin-bottom:14px}
-.opt{display:flex;align-items:flex-start;gap:12px;background:var(--surface);border:1px solid var(--border);padding:14px 16px;border-radius:8px;cursor:pointer;font-size:13.5px;line-height:1.55;text-align:left;font-family:var(--sans);color:var(--text);transition:border-color .15s,background .15s;width:100%}
-.opt:hover:not(:disabled){border-color:var(--border2);background:var(--surface2)}
-.opt .lbl{font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0;width:16px;padding-top:2px}
-.opt.correct{border-color:var(--green);background:rgba(61,153,112,.08);color:#5dbe94}
-.opt.correct .lbl{color:#5dbe94}
-.opt.wrong{border-color:var(--red);background:rgba(192,57,43,.08);color:#e57065}
-.opt.wrong .lbl{color:#e57065}
-.opt:disabled{cursor:default}
-
-.explain-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px 18px;font-size:13px;line-height:1.75;color:#aaaabd;display:none;margin-bottom:14px;animation:fadeUp .25s ease both}
-.ex-head{font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em;display:block;margin-bottom:8px}
-.ex-math{font-family:var(--mono);font-size:12px;color:var(--gold);background:var(--bg);padding:8px 12px;border-radius:4px;margin-top:10px;line-height:1.8}
-
-.next-btn{width:100%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-family:var(--sans);font-size:13px;font-weight:500;padding:13px;border-radius:8px;cursor:pointer;transition:border-color .15s,background .15s;display:none}
-.next-btn:hover{border-color:var(--gold);color:var(--gold)}
-
-/* ── BLOCKED ── */
-.blocked-wrap{text-align:center;padding:80px 20px}
-.blocked-icon{font-size:40px;margin-bottom:20px}
-.blocked-title{font-family:var(--serif);font-size:28px;margin-bottom:10px}
-.blocked-sub{font-size:13px;color:var(--muted);line-height:1.7;max-width:360px;margin:0 auto 28px}
-.lb-btn{background:transparent;border:1px solid var(--border2);color:var(--text);font-family:var(--sans);font-size:13px;font-weight:500;padding:12px 24px;border-radius:8px;cursor:pointer;transition:border-color .15s}
-.lb-btn:hover{border-color:var(--gold);color:var(--gold)}
-
-/* ── RESULTS ── */
-.result-top{margin-bottom:36px}
-.result-score{font-family:var(--serif);font-size:clamp(52px,12vw,80px);line-height:1;letter-spacing:-.03em;margin-bottom:6px}
-.result-score span{color:var(--gold)}
-.result-grade{font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:4px}
-.result-msg{font-size:14px;color:var(--muted);font-style:italic}
-
-.bd-section-title{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:12px}
-.breakdown{display:grid;gap:6px;margin-bottom:32px}
-.bd-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-size:13px}
-.bd-q{color:var(--muted);max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
-.badge{font-family:var(--mono);font-size:9px;padding:3px 8px;border-radius:20px}
-.badge.c{color:#5dbe94;background:rgba(61,153,112,.1);border:1px solid rgba(61,153,112,.2)}
-.badge.w{color:#e57065;background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.2)}
-
-.lb-cta{width:100%;background:var(--gold);color:#0c0c0e;font-family:var(--sans);font-size:14px;font-weight:600;border:none;border-radius:8px;padding:15px;cursor:pointer;transition:background .2s;margin-bottom:10px}
-.lb-cta:hover{background:var(--gold2)}
-
-/* ── LEADERBOARD ── */
-.lb-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px}
-.lb-top h2{font-family:var(--serif);font-size:32px;letter-spacing:-.01em}
-.lb-meta{font-family:var(--mono);font-size:10px;color:var(--muted)}
-
-.lb-rows{display:grid;gap:6px;margin-bottom:32px}
-.lb-row{display:grid;grid-template-columns:28px 1fr auto auto;align-items:center;gap:12px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;transition:border-color .2s}
-.lb-row.top1{border-color:rgba(212,168,67,.3);background:rgba(212,168,67,.04)}
-.lb-row.top2{border-color:rgba(180,180,200,.2)}
-.lb-row.top3{border-color:rgba(160,120,70,.2)}
-.lb-row.you{border-color:var(--border2)}
-.lb-rank{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center}
-.lb-rank.gold{color:var(--gold)}
-.lb-name-cell{font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.lb-you-tag{font-family:var(--mono);font-size:9px;color:var(--muted);vertical-align:middle;margin-left:6px}
-.lb-grade-pill{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:3px;border:1px solid var(--border);color:var(--muted)}
-.lb-pts{font-family:var(--mono);font-size:13px;color:var(--text)}
-.no-scores{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center;padding:32px}
-
-.back-btn{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:var(--mono);font-size:11px;padding:10px 18px;border-radius:6px;cursor:pointer;letter-spacing:.08em;transition:all .15s}
-.back-btn:hover{border-color:var(--border2);color:var(--text)}
-
-/* ── ERROR ── */
-.err-box{background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.2);border-radius:8px;padding:16px 18px;font-size:13px;color:#e57065;margin-bottom:20px;line-height:1.6;font-family:var(--mono);display:none}
-
-/* timeout overlay */
-.timeout-overlay{position:fixed;inset:0;background:rgba(12,12,14,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;display:none;animation:fadeUp .3s ease both}
-.timeout-overlay.active{display:flex}
-.to-title{font-family:var(--serif);font-size:40px;margin-bottom:8px}
-.to-sub{font-size:13px;color:var(--muted);margin-bottom:32px}
+input,button{
+  padding:10px;
+  margin:8px;
+}
+.opt{
+  display:block;
+  margin:8px auto;
+  width:80%;
+}
 </style>
 </head>
+
 <body>
-<div class="wrap">
 
-<!-- ENTRY -->
-<div class="screen active" id="s-entry">
-  <div class="eyebrow">OOU · Study Group · D.E Quiz</div>
-  <div class="hero">Differential<br><em>Equations</em></div>
-  <p class="sub">AI-generated questions · 15 min timer · one attempt per person</p>
+<h1>DE Quiz (Offline)</h1>
 
-  <div class="form-row">
-    <span class="form-label">Your name</span>
-    <input type="text" id="name-input" placeholder="Enter your name" maxlength="30" autocomplete="off"/>
-  </div>
-
-  <div class="form-row">
-    <span class="form-label">Topics</span>
-    <div class="topic-chips">
-      <span class="chip">Order & Degree</span>
-      <span class="chip">Formation of D.E</span>
-      <span class="chip">1st Order Solutions</span>
-      <span class="chip">Variable Separation</span>
-      <span class="chip">Homogeneous D.E</span>
-      <span class="chip">Exact D.E</span>
-    </div>
-  </div>
-
-  <div class="err-box" id="entry-err"></div>
-  <button class="start-btn" id="start-btn" onclick="startFlow()">Generate Quiz</button>
-  <span class="lb-link" onclick="showLB()">View leaderboard →</span>
+<div id="entry">
+  <input id="name" placeholder="Enter your name"><br>
+  <button onclick="start()">Start Quiz</button>
+  <button onclick="showLB()">Leaderboard</button>
 </div>
 
-<!-- LOADING -->
-<div class="screen" id="s-loading">
-  <div class="loading-wrap">
-    <div class="spinner"></div>
-    <div class="loading-text">generating your questions...</div>
-  </div>
+<div id="quiz" style="display:none">
+  <h3 id="q"></h3>
+  <p id="math"></p>
+  <div id="opts"></div>
+  <button id="next" onclick="nextQ()" style="display:none">Next</button>
 </div>
 
-<!-- BLOCKED -->
-<div class="screen" id="s-blocked">
-  <div class="blocked-wrap">
-    <div class="blocked-icon">🔒</div>
-    <div class="blocked-title">Already attempted</div>
-    <p class="blocked-sub">You've already taken this quiz, <span id="blocked-name"></span>. Only one attempt is allowed per person.</p>
-    <button class="lb-btn" onclick="showLB()">See leaderboard</button>
-  </div>
+<div id="result" style="display:none">
+  <h2 id="score"></h2>
+  <h3 id="grade"></h3>
+  <button onclick="showLB()">View Leaderboard</button>
 </div>
 
-<!-- QUIZ -->
-<div class="screen" id="s-quiz">
-  <div class="quiz-top">
-    <span class="q-counter" id="q-counter">1 / 15</span>
-    <div class="timer-wrap">
-      <span class="timer-icon">⏱</span>
-      <span class="timer" id="timer">15:00</span>
-    </div>
-  </div>
-  <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
-  <div class="q-card">
-    <div class="q-topic-tag" id="q-topic"></div>
-    <div class="q-text" id="q-text"></div>
-    <div class="q-math" id="q-math"></div>
-  </div>
-  <div class="options" id="options"></div>
-  <div class="explain-box" id="explain-box"></div>
-  <button class="next-btn" id="next-btn" onclick="nextQ()">Next question →</button>
-</div>
-
-<!-- RESULTS -->
-<div class="screen" id="s-results">
-  <div class="result-top">
-    <div class="result-score" id="res-score">0<span>/15</span></div>
-    <div class="result-grade" id="res-grade"></div>
-    <div class="result-msg" id="res-msg"></div>
-  </div>
-  <div class="bd-section-title">Question breakdown</div>
-  <div class="breakdown" id="breakdown"></div>
-  <button class="lb-cta" onclick="showLB()">View leaderboard</button>
-</div>
-
-<!-- LEADERBOARD -->
-<div class="screen" id="s-lb">
-  <div class="lb-top">
-    <h2>Leaderboard</h2>
-    <span class="lb-meta" id="lb-meta"></span>
-  </div>
-  <div class="lb-rows" id="lb-rows"><div class="no-scores">Loading...</div></div>
-  <button class="back-btn" onclick="showEntry()">← Back</button>
-</div>
-
-</div><!-- /wrap -->
-
-<!-- TIMEOUT -->
-<div class="timeout-overlay" id="timeout-overlay">
-  <div class="to-title">Time's up.</div>
-  <p class="to-sub">Your answers so far have been submitted.</p>
-  <button class="lb-cta" style="width:220px" onclick="finishQuiz()">See my results</button>
+<div id="lb" style="display:none">
+  <h2>Leaderboard</h2>
+  <div id="lbdata"></div>
+  <button onclick="back()">Back</button>
 </div>
 
 <script>
-// ─────────────────────────────────────────────────────────────────────────────
-// CONFIG
-// ─────────────────────────────────────────────────────────────────────────────
-const QUIZ_DURATION = 15 * 60; // 15 minutes in seconds
-const TOTAL_QUESTIONS = 15;
-const LB_KEY = 'de_quiz_lb_v2';
-const ATTEMPT_PREFIX = 'de_attempt_';
 
-const TOPICS = [
-  "Order and Degree of Differential Equations",
-  "Formation of Differential Equations",
-  "Solution of First Order Differential Equations",
-  "Variable Separation method",
-  "Homogeneous Differential Equations",
-  "Exact Differential Equations"
+// CONFIG
+const TOTAL = 15;
+const LB_KEY = "quiz_lb";
+
+// 🔥 50 QUESTIONS
+const QUESTION_BANK = [
+{topic:"Order",question:"Find order",math:"d²y/dx² + y = 0",options:["1","2","3","0"],answer:1},
+{topic:"Order",question:"Find order",math:"d³y/dx³ + dy/dx = 0",options:["1","2","3","0"],answer:2},
+{topic:"Degree",question:"Find degree",math:"(d²y/dx²)² + y = 0",options:["1","2","3","0"],answer:1},
+{topic:"Degree",question:"Find degree",math:"(d²y/dx²)³ + y = 0",options:["1","2","3","0"],answer:2},
+{topic:"Order",question:"Order?",math:"(dy/dx)^2 + y = 0",options:["1","2","3","0"],answer:0},
+
+{topic:"Formation",question:"Eliminate C",math:"y = Cx",options:["dy/dx=C","dy/dx=y/x","x","none"],answer:1},
+{topic:"Formation",question:"Eliminate C",math:"y = Ce^x",options:["dy/dx=y","x","C","none"],answer:0},
+{topic:"Formation",question:"Eliminate C",math:"y = Cx²",options:["dy/dx=2y/x","dy/dx=x","y=x²","none"],answer:0},
+{topic:"Formation",question:"Eliminate C",math:"y = C sin x",options:["dy/dx=y cot x","dy/dx=cos x","y=x","none"],answer:0},
+{topic:"Formation",question:"Eliminate C",math:"y = C ln x",options:["dy/dx=y/x ln x","dy/dx=1/x","y=x","none"],answer:0},
+
+{topic:"Separation",question:"Solve",math:"dy/dx = y",options:["Ce^x","x²","lnx","Cx"],answer:0},
+{topic:"Separation",question:"Solve",math:"dy/dx = x",options:["x²/2 + C","Ce^x","lnx","Cx"],answer:0},
+{topic:"Separation",question:"Solve",math:"dy/dx = xy",options:["Ce^(x²/2)","Ce^x","x²","lnx"],answer:0},
+{topic:"Separation",question:"Solve",math:"dy/dx = y/x",options:["Cx","Ce^x","x²","lnx"],answer:0},
+{topic:"Separation",question:"Solve",math:"dy/dx = x²y",options:["Ce^(x³/3)","Ce^x","x³","lnx"],answer:0},
+{topic:"Separation",question:"Solve",math:"dy/dx = y²",options:["-1/y = x + C","Ce^x","x²","lnx"],answer:0},
+{topic:"Separation",question:"Solve",math:"dy/dx = 1/x",options:["lnx + C","Ce^x","x²","y=x"],answer:0},
+{topic:"Separation",question:"Solve",math:"dy/dx = e^x",options:["e^x + C","lnx","x²","Cx"],answer:0},
+{topic:"Separation",question:"Solve",math:"dy/dx = cos x",options:["sin x + C","cos x","lnx","Cx"],answer:0},
+{topic:"Separation",question:"Solve",math:"dy/dx = sec²x",options:["tan x + C","cos x","lnx","Cx"],answer:0},
+
+{topic:"Homogeneous",question:"Substitution?",math:"dy/dx=(x+y)/x",options:["y=vx","y=x²","lnx","none"],answer:0},
+{topic:"Homogeneous",question:"Identify",math:"dy/dx=y/x",options:["Homogeneous","Exact","Linear","None"],answer:0},
+{topic:"Homogeneous",question:"Identify",math:"dy/dx=(x²+y²)/(xy)",options:["Homogeneous","Exact","Linear","None"],answer:0},
+{topic:"Homogeneous",question:"Substitution?",math:"dy/dx=(x-y)/x",options:["y=vx","y=x²","lnx","none"],answer:0},
+{topic:"Homogeneous",question:"Identify",math:"dy/dx=(x+y)/(x-y)",options:["Homogeneous","Exact","Linear","None"],answer:0},
+{topic:"Homogeneous",question:"Substitution?",math:"dy/dx=(2x+y)/x",options:["y=vx","y=x²","lnx","none"],answer:0},
+{topic:"Homogeneous",question:"Identify",math:"dy/dx=(y/x)+1",options:["Homogeneous","Exact","Linear","None"],answer:0},
+{topic:"Homogeneous",question:"Substitution?",math:"dy/dx=(y-2x)/x",options:["y=vx","y=x²","lnx","none"],answer:0},
+{topic:"Homogeneous",question:"Identify",math:"dy/dx=(x²-y²)/(xy)",options:["Homogeneous","Exact","Linear","None"],answer:0},
+{topic:"Homogeneous",question:"Substitution?",math:"dy/dx=(x+2y)/x",options:["y=vx","y=x²","lnx","none"],answer:0},
+
+{topic:"Exact",question:"Check",math:"(2x+y)dx + xdy = 0",options:["Exact","Not exact","Linear","None"],answer:0},
+{topic:"Exact",question:"Check",math:"(y+x)dx + (x+y)dy = 0",options:["Exact","Not exact","Linear","None"],answer:0},
+{topic:"Exact",question:"Check",math:"(y+x²)dx + xdy = 0",options:["Exact","Not exact","Linear","None"],answer:1},
+{topic:"Exact",question:"Check",math:"(2xy)dx + x²dy = 0",options:["Exact","Not exact","Linear","None"],answer:0},
+{topic:"Exact",question:"Check",math:"(y²+x)dx + ydy = 0",options:["Exact","Not exact","Linear","None"],answer:1},
+{topic:"Exact",question:"Check",math:"(3x²y)dx + x³dy = 0",options:["Exact","Not exact","Linear","None"],answer:0},
+{topic:"Exact",question:"Check",math:"(y+x³)dx + 3x²y dy = 0",options:["Exact","Not exact","Linear","None"],answer:1},
+{topic:"Exact",question:"Check",math:"(x+y²)dx + 2xy dy = 0",options:["Exact","Not exact","Linear","None"],answer:0},
+{topic:"Exact",question:"Check",math:"(y+x)dx + x dy = 0",options:["Exact","Not exact","Linear","None"],answer:1},
+{topic:"Exact",question:"Check",math:"(2x+y²)dx + 2xy dy = 0",options:["Exact","Not exact","Linear","None"],answer:0}
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
 // STATE
-// ─────────────────────────────────────────────────────────────────────────────
-let userName = '';
-let questions = [];
-let currentIdx = 0;
-let score = 0;
-let answered = false;
-let log = [];
-let timerInterval = null;
-let secondsLeft = QUIZ_DURATION;
-let quizStarted = false;
+let qs=[],i=0,score=0,name="";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SCREEN
-// ─────────────────────────────────────────────────────────────────────────────
-function show(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  window.scrollTo(0, 0);
+// START
+function start(){
+  name=document.getElementById("name").value.trim();
+  if(!name) return;
+
+  qs = QUESTION_BANK.sort(()=>Math.random()-0.5).slice(0,TOTAL);
+  i=0; score=0;
+
+  show("quiz");
+  render();
 }
 
-function showEntry() { show('s-entry'); }
-function showLB() { show('s-lb'); renderLB(); }
+// RENDER
+function render(){
+  let q=qs[i];
+  document.getElementById("q").innerText=q.question;
+  document.getElementById("math").innerText=q.math;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ATTEMPT LOCK (localStorage)
-// ─────────────────────────────────────────────────────────────────────────────
-function attemptKey(name) { return ATTEMPT_PREFIX + name.toLowerCase().trim(); }
-function hasAttempted(name) { return !!localStorage.getItem(attemptKey(name)); }
-function lockAttempt(name) { localStorage.setItem(attemptKey(name), Date.now()); }
+  let box=document.getElementById("opts");
+  box.innerHTML="";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// LEADERBOARD (localStorage shared-ish — works when on same device/browser)
-// For GitHub Pages: all local. For Vercel + Supabase: swap this section.
-// ─────────────────────────────────────────────────────────────────────────────
-function getLeaderboard() {
-  try { return JSON.parse(localStorage.getItem(LB_KEY) || '[]'); } catch { return []; }
-}
-function saveToLeaderboard(name, sc, total, timeTaken) {
-  const lb = getLeaderboard();
-  const pct = Math.round(sc / total * 100);
-  const { g } = gradeInfo(pct);
-  lb.push({ name, score: sc, total, pct, grade: g, timeTaken, ts: Date.now() });
-  lb.sort((a, b) => b.score - a.score || a.timeTaken - b.timeTaken);
-  localStorage.setItem(LB_KEY, JSON.stringify(lb));
-}
-
-function renderLB() {
-  const lb = getLeaderboard();
-  const rows = document.getElementById('lb-rows');
-  document.getElementById('lb-meta').textContent = lb.length + ' attempt' + (lb.length !== 1 ? 's' : '');
-  if (!lb.length) { rows.innerHTML = '<div class="no-scores">No scores yet. Be the first.</div>'; return; }
-  const rankSymbols = ['🥇', '🥈', '🥉'];
-  rows.innerHTML = lb.slice(0, 20).map((e, i) => {
-    const isYou = userName && e.name.toLowerCase() === userName.toLowerCase();
-    const rankClass = i < 3 ? `top${i + 1}` : (isYou ? 'you' : '');
-    const rankDisplay = i < 3 ? `<span class="lb-rank gold">${rankSymbols[i]}</span>` : `<span class="lb-rank">${i + 1}</span>`;
-    const mins = Math.floor(e.timeTaken / 60), secs = e.timeTaken % 60;
-    const timeStr = `${mins}:${String(secs).padStart(2, '0')}`;
-    return `<div class="lb-row ${rankClass}">
-      ${rankDisplay}
-      <span class="lb-name-cell">${e.name}${isYou ? '<span class="lb-you-tag">(you)</span>' : ''}</span>
-      <span class="lb-grade-pill">${e.grade} · ${timeStr}</span>
-      <span class="lb-pts">${e.score}/${e.total}</span>
-    </div>`;
-  }).join('');
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// GRADING
-// ─────────────────────────────────────────────────────────────────────────────
-function gradeInfo(pct) {
-  if (pct >= 90) return { g: 'A', msg: 'Excellent. Top of the group.' };
-  if (pct >= 75) return { g: 'B', msg: 'Solid. A few gaps to close.' };
-  if (pct >= 60) return { g: 'C', msg: 'Average. Review the misses.' };
-  if (pct >= 45) return { g: 'D', msg: 'Struggling. Go back to your notes.' };
-  return { g: 'F', msg: 'Back to basics.' };
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TIMER
-// ─────────────────────────────────────────────────────────────────────────────
-function startTimer() {
-  secondsLeft = QUIZ_DURATION;
-  updateTimerDisplay();
-  timerInterval = setInterval(() => {
-    secondsLeft--;
-    updateTimerDisplay();
-    if (secondsLeft <= 0) {
-      clearInterval(timerInterval);
-      timeUp();
-    }
-  }, 1000);
-}
-
-function updateTimerDisplay() {
-  const el = document.getElementById('timer');
-  const m = Math.floor(secondsLeft / 60);
-  const s = secondsLeft % 60;
-  el.textContent = `${m}:${String(s).padStart(2, '0')}`;
-  el.className = 'timer';
-  if (secondsLeft <= 60) el.classList.add('danger');
-  else if (secondsLeft <= 180) el.classList.add('warning');
-}
-
-function timeUp() {
-  document.getElementById('timeout-overlay').classList.add('active');
-}
-
-function timeTaken() { return QUIZ_DURATION - secondsLeft; }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// AI QUESTION GENERATION
-// ─────────────────────────────────────────────────────────────────────────────
-async function generateQuestions() {
-  const prompt = `You are a university mathematics lecturer. Generate exactly ${TOTAL_QUESTIONS} multiple choice questions for a first-year university exam on Differential Equations.
-
-Cover these topics (spread questions across all of them):
-${TOPICS.map((t, i) => `${i + 1}. ${t}`).join('\n')}
-
-Rules:
-- Each question must be university-level, precise, and test real understanding
-- 4 options each (A, B, C, D)
-- Exactly one correct answer
-- Include the mathematical expression separately from the question text
-- Include a concise explanation (2-3 sentences) and a short worked math line
-- Vary difficulty: some conceptual, some computational
-- Use proper mathematical notation (use unicode symbols like dy/dx, ∂, ∫, →, ², ³, etc.)
-
-Respond ONLY with a valid JSON array, no markdown, no backticks, no preamble. Format:
-[
-  {
-    "topic": "topic name",
-    "question": "question text without the equation",
-    "math": "the equation or expression being asked about",
-    "options": ["option A", "option B", "option C", "option D"],
-    "answer": 0,
-    "explanation": "brief explanation of why the answer is correct",
-    "workings": "short math working line"
-  }
-]`;
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4000,
-      messages: [{ role: 'user', content: prompt }]
-    })
+  q.options.forEach((o,idx)=>{
+    let b=document.createElement("button");
+    b.className="opt";
+    b.innerText=o;
+    b.onclick=()=>select(idx);
+    box.appendChild(b);
   });
 
-  if (!response.ok) throw new Error('API error ' + response.status);
-  const data = await response.json();
-  const text = data.content.find(b => b.type === 'text')?.text || '';
-  const clean = text.replace(/```json|```/g, '').trim();
-  const parsed = JSON.parse(clean);
-  if (!Array.isArray(parsed) || parsed.length < 5) throw new Error('Bad response format');
-  return parsed.slice(0, TOTAL_QUESTIONS);
+  document.getElementById("next").style.display="none";
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// FLOW
-// ─────────────────────────────────────────────────────────────────────────────
-async function startFlow() {
-  const name = document.getElementById('name-input').value.trim();
-  const errEl = document.getElementById('entry-err');
-  errEl.style.display = 'none';
-
-  if (!name) {
-    document.getElementById('name-input').focus();
-    return;
-  }
-
-  if (hasAttempted(name)) {
-    document.getElementById('blocked-name').textContent = name;
-    show('s-blocked');
-    return;
-  }
-
-  userName = name;
-  document.getElementById('start-btn').disabled = true;
-  show('s-loading');
-
-  try {
-    questions = await generateQuestions();
-  } catch (e) {
-    show('s-entry');
-    document.getElementById('start-btn').disabled = false;
-    errEl.textContent = 'Could not generate questions. Check your connection and try again.';
-    errEl.style.display = 'block';
-    return;
-  }
-
-  currentIdx = 0;
-  score = 0;
-  log = [];
-  answered = false;
-
-  show('s-quiz');
-  startTimer();
-  renderQuestion();
+// SELECT
+function select(ans){
+  if(ans===qs[i].answer) score++;
+  document.getElementById("next").style.display="block";
 }
 
-function renderQuestion() {
-  answered = false;
-  const q = questions[currentIdx];
-  const total = questions.length;
+// NEXT
+function nextQ(){
+  i++;
+  if(i>=qs.length) finish();
+  else render();
+}
 
-  document.getElementById('q-counter').textContent = `${currentIdx + 1} / ${total}`;
-  document.getElementById('prog-fill').style.width = `${(currentIdx / total) * 100}%`;
-  document.getElementById('q-topic').textContent = q.topic;
-  document.getElementById('q-text').textContent = q.question;
-  document.getElementById('q-math').textContent = q.math;
+// FINISH
+function finish(){
+  let pct = (score/qs.length)*100;
+  let g = grade(pct);
 
-  const opts = document.getElementById('options');
-  opts.innerHTML = '';
-  const labels = ['A', 'B', 'C', 'D'];
-  q.options.forEach((o, i) => {
-    const b = document.createElement('button');
-    b.className = 'opt';
-    b.innerHTML = `<span class="lbl">${labels[i]}</span>${o}`;
-    b.onclick = () => selectAnswer(i);
-    opts.appendChild(b);
+  saveScore(name,score,qs.length);
+
+  document.getElementById("score").innerText=`${score}/${qs.length}`;
+  document.getElementById("grade").innerText=`Grade: ${g}`;
+
+  show("result");
+}
+
+// GRADE
+function grade(p){
+  if(p>=70) return "A";
+  if(p>=60) return "B";
+  if(p>=50) return "C";
+  if(p>=45) return "D";
+  return "F";
+}
+
+// LEADERBOARD
+function saveScore(n,s,t){
+  let lb=JSON.parse(localStorage.getItem(LB_KEY)||"[]");
+  lb.push({n,s,t,g:grade((s/t)*100)});
+  lb.sort((a,b)=>b.s-a.s);
+  localStorage.setItem(LB_KEY,JSON.stringify(lb));
+}
+
+function showLB(){
+  show("lb");
+  let lb=JSON.parse(localStorage.getItem(LB_KEY)||"[]");
+  let d=document.getElementById("lbdata");
+  d.innerHTML="";
+
+  lb.forEach((p,i)=>{
+    let div=document.createElement("div");
+    div.innerText=`${i+1}. ${p.n} - ${p.s}/${p.t} (${p.g})`;
+    d.appendChild(div);
   });
-
-  document.getElementById('explain-box').style.display = 'none';
-  document.getElementById('next-btn').style.display = 'none';
-
-  // re-trigger card animation
-  const card = document.querySelector('.q-card');
-  card.style.animation = 'none';
-  card.offsetHeight;
-  card.style.animation = 'fadeUp .3s ease both';
 }
 
-function selectAnswer(i) {
-  if (answered) return;
-  answered = true;
-
-  const q = questions[currentIdx];
-  const correct = i === q.answer;
-  if (correct) score++;
-  log.push({ q: q.question, correct });
-
-  document.querySelectorAll('.opt').forEach((b, j) => {
-    b.disabled = true;
-    if (j === q.answer) b.classList.add('correct');
-    if (j === i && !correct) b.classList.add('wrong');
+// NAV
+function show(id){
+  ["entry","quiz","result","lb"].forEach(x=>{
+    document.getElementById(x).style.display="none";
   });
-
-  const ex = document.getElementById('explain-box');
-  ex.style.display = 'block';
-  ex.innerHTML = `<span class="ex-head">Explanation</span>${q.explanation}<div class="ex-math">${q.workings}</div>`;
-
-  const isLast = currentIdx === questions.length - 1;
-  const nb = document.getElementById('next-btn');
-  nb.textContent = isLast ? 'Finish quiz' : 'Next question →';
-  nb.style.display = 'block';
+  document.getElementById(id).style.display="block";
 }
 
-function nextQ() {
-  currentIdx++;
-  if (currentIdx >= questions.length) {
-    finishQuiz();
-  } else {
-    renderQuestion();
-  }
-}
+function back(){ show("entry"); }
 
-function finishQuiz() {
-  clearInterval(timerInterval);
-  document.getElementById('timeout-overlay').classList.remove('active');
-
-  const total = questions.length;
-  const taken = timeTaken();
-  const pct = Math.round(score / total * 100);
-  const { g, msg } = gradeInfo(pct);
-
-  lockAttempt(userName);
-  saveToLeaderboard(userName, score, total, taken);
-
-  document.getElementById('res-score').innerHTML = `${score}<span>/${total}</span>`;
-  document.getElementById('res-grade').textContent = `Grade: ${g}  ·  ${pct}%`;
-  document.getElementById('res-msg').textContent = msg;
-
-  const bd = document.getElementById('breakdown');
-  bd.innerHTML = '';
-  log.forEach((r, i) => {
-    const d = document.createElement('div');
-    d.className = 'bd-row';
-    d.innerHTML = `<span class="bd-q">Q${i + 1}: ${r.q}</span><span class="badge ${r.correct ? 'c' : 'w'}">${r.correct ? 'Correct' : 'Wrong'}</span>`;
-    bd.appendChild(d);
-  });
-
-  show('s-results');
-}
 </script>
+
 </body>
 </html>
